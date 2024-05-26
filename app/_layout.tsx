@@ -1,41 +1,60 @@
-import {DarkTheme, DefaultTheme, ThemeProvider} from '@react-navigation/native';
-import {useFonts} from 'expo-font';
-import {Stack} from 'expo-router';
+
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import {useEffect} from 'react';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
-
-import {useColorScheme} from '@/hooks/useColorScheme';
-import {NativeBaseProvider} from "native-base";
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { NativeBaseProvider } from 'native-base';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { PackageProvider } from '@/context/PackageContext';
+import Toast from 'react-native-toast-message';
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+const AppLayout: React.FC = () => {
+    const { isAuthenticated, isLoading } = useAuth();
     const colorScheme = useColorScheme();
     const [loaded] = useFonts({
         SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     });
 
     useEffect(() => {
-        if (loaded) {
+        if (loaded && !isLoading) {
             SplashScreen.hideAsync();
         }
-    }, [loaded]);
+    }, [loaded, isLoading]);
 
-    if (!loaded) {
+    if (!loaded || isLoading) {
         return null;
     }
 
+    console.log('Is Authenticated:', isAuthenticated);
     return (
         <NativeBaseProvider>
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <Stack>
-                    <Stack.Screen name="(auth)" options={{headerShown: false}} />
-                    <Stack.Screen name="(app)" options={{headerShown: false}}/>
-                    <Stack.Screen name="+not-found"/>
+
+                    <Stack.Screen name="(app)" options={{ headerShown: false }} />
+
+                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+
+                    <Stack.Screen name="+not-found" />
+
                 </Stack>
             </ThemeProvider>
         </NativeBaseProvider>
     );
-}
+};
+
+const RootLayout: React.FC = () => {
+    return (
+        <AuthProvider>
+            <PackageProvider>
+                <AppLayout />
+            </PackageProvider>
+        </AuthProvider>
+    );
+};
+
+export default RootLayout;
