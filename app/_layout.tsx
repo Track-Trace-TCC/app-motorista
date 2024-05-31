@@ -10,6 +10,8 @@ import { NativeBaseProvider } from 'native-base';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { PackageProvider } from '@/context/PackageContext';
 import Toast from 'react-native-toast-message';
+import { RouteProvider } from '@/context/RouteContext';
+import { SimulationModeProvider } from '@/context/SimulationModeContext';
 SplashScreen.preventAutoHideAsync();
 
 const AppLayout: React.FC = () => {
@@ -50,9 +52,13 @@ const AppLayout: React.FC = () => {
 const RootLayout: React.FC = () => {
     return (
         <AuthProvider>
-            <PackageProvider>
-                <AppLayout />
-            </PackageProvider>
+            <RouteProvider>
+                <PackageProvider>
+                    <SimulationModeProvider>
+                        <AppLayout />
+                    </SimulationModeProvider>
+                </PackageProvider>
+            </RouteProvider>
         </AuthProvider>
     );
 };

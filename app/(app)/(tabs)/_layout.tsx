@@ -12,11 +12,13 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import api from '@/services/api';
 import { usePackages } from '@/context/PackageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@/context/RouteContext';
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [scanned, setScanned] = useState(false);
+    const { route, setRoute } = useRoute();
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const { packages, setPackages } = usePackages();
@@ -46,6 +48,7 @@ export default function TabLayout() {
                 try {
                     const response = await api.get(`/package/${data}`);
                     const newPackage = response.data;
+                    console.log(response.data)
                     setPackages(prevPackages => [...prevPackages, newPackage]);
                     showToast('Pacote vinculado com sucesso!', 'success');
                 } catch (error) {
@@ -89,14 +92,6 @@ export default function TabLayout() {
 
             const idMotorista = await AsyncStorage.getItem('id');
 
-            const packagesIds = packages.map(pkg => pkg.id);
-
-            await api.patch('/package/associate-driver', {
-                idMotorista,
-                packages_ids: packagesIds,
-                localizacao,
-            });
-
             const destinos = packages.map(pkg => {
                 const destino = JSON.parse(pkg.destino);
                 return {
@@ -105,7 +100,8 @@ export default function TabLayout() {
                 };
             });
 
-            await api.post('/routes', {
+            // Primeiro, criar a rota
+            const responseRoute = await api.post('/routes', {
                 idMotorista,
                 origem: {
                     lat: localizacao.latitude,
@@ -114,6 +110,19 @@ export default function TabLayout() {
                 destinos,
             });
 
+            const routeId = responseRoute.data.id_Rota;
+
+            const packagesIds = packages.map(pkg => pkg.id);
+
+            await api.patch('/package/associate-driver', {
+                idMotorista,
+                packages_ids: packagesIds,
+                localizacao,
+                route_id: routeId,
+            });
+
+            const newRoute = await api.get('/routes/' + routeId);
+            setRoute(newRoute.data);
             showToast('Entregas iniciadas com sucesso!', 'success');
         } catch (error) {
             console.log(error);
@@ -162,9 +171,12 @@ export default function TabLayout() {
                     }}
                 />
             </Tabs>
-            <TouchableOpacity style={styles.fabContainer} onPress={() => setModalVisible(true)}>
-                <MaterialCommunityIcons name="camera-outline" size={28} color="black" />
-            </TouchableOpacity>
+            {!route && (
+                <TouchableOpacity style={styles.fabContainer} onPress={() => setModalVisible(true)}>
+                    <MaterialCommunityIcons name="camera-outline" size={28} color="black" />
+                </TouchableOpacity>
+            )}
+
 
             <Modal
                 animationType="slide"
@@ -232,7 +244,7 @@ export default function TabLayout() {
                 />
             </View>
 
-            {packages.length > 0 && (
+            {packages.length > 0 && !route && (
                 <TouchableOpacity style={styles.floatingButton} onPress={iniciarEntregas}>
                     <Text style={styles.floatingButtonText}>Iniciar entregas</Text>
                 </TouchableOpacity>

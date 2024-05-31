@@ -2,16 +2,18 @@ import { ThemedText } from '@/components/ThemedText';
 import { styles } from './styles';
 import { ThemedView } from "@/components/ThemedView";
 import React, { useEffect } from "react";
-import { Avatar, Box, CheckIcon, Heading, HStack, Text, VStack } from "native-base";
+import { Avatar, Box, CheckIcon, Heading, HStack, Switch, Text, VStack } from "native-base";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useSimulationMode } from '@/context/SimulationModeContext';
 
 export default function ProfileScreen() {
     const [name, setName] = React.useState<string | null>(null);
     const [id, setId] = React.useState<string | null>(null);
     const [twoFirstLetters, setTwoFirstLetters] = React.useState<string | null>(null);
+    const { isSimulationMode, toggleSimulationMode } = useSimulationMode();
+
     useEffect(() => {
         AsyncStorage.getItem('name').then((name) => {
             setName(name);
@@ -59,8 +61,16 @@ export default function ProfileScreen() {
                     </Text>
                 </HStack>
             </TouchableOpacity>
+
+            <HStack space={1.5} pl="4" mt='3' alignItems={'center'}>
+                <Text color="gray.700" fontSize="md">
+                    Modo Simulação
+                </Text>
+                <Switch
+                    isChecked={isSimulationMode}
+                    onToggle={toggleSimulationMode}
+                />
+            </HStack>
         </ThemedView>
     );
 }
-
-
